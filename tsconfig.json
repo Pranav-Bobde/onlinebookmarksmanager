@@ -1,0 +1,19 @@
+{
+  "$schema": "./node_modules/@effect/tsgo/schema.json",
+  "extends": "./tsconfig.base.json",
+  "include": [
+    "*.ts",
+    "apps/*/src/**/*.ts",
+    "packages/*/src/**/*.ts"
+  ],
+  "compilerOptions": {
+    "plugins": [
+      {
+        "name": "@effect/language-service",
+        "diagnosticSeverity": {
+          "unstableApiUsage": "suggestion"
+        }
+      }
+    ]
+  }
+}

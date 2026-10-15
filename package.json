@@ -1,0 +1,15 @@
+{
+  "name": "onlinebookmarksmanager",
+  "private": true,
+  "type": "module",
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "prepare": "effect-tsgo patch --typescript --no-oxlint"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.3",
+    "typescript": "7.0.2",
+    "@effect/tsgo": "0.53.1"
+  }
+}

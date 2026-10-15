@@ -1,0 +1,16 @@
+# secrets: never commit
+.env
+.env.*
+!.env.example
+
+# research and experiments: kept on this Mac, not in git
+rnd/
+
+# installed packages and generated output
+node_modules/
+dist/
+.wrangler/
+.alchemy/
+
+# macOS noise
+.DS_Store
