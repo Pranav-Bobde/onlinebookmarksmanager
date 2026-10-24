@@ -2,14 +2,26 @@
   "name": "onlinebookmarksmanager",
   "private": true,
   "type": "module",
-  "workspaces": ["apps/*", "packages/*"],
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "prepare": "effect-tsgo patch --typescript --no-oxlint"
   },
   "devDependencies": {
+    "@effect/tsgo": "0.53.1",
     "@types/bun": "^1.4.3",
-    "typescript": "7.0.2",
-    "@effect/tsgo": "0.53.1"
+    "prettier": "3.9.10",
+    "typescript": "7.0.2"
+  },
+  "dependencies": {
+    "@effect/platform-bun": "4.0.5",
+    "@effect/platform-node": "4.0.5",
+    "alchemy": "2.0.0-beta.83",
+    "effect": "4.0.5"
   }
 }
