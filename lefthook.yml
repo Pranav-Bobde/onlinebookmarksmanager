@@ -1,0 +1,18 @@
+pre-commit:
+  parallel: true
+  jobs:
+    - name: format
+      run: bun run format:check
+    - name: lint
+      run: bun run lint
+    - name: typecheck
+      run: bun run typecheck
+    - name: deadcode
+      run: bun run deadcode
+    - name: test
+      run: bun run test
+
+commit-msg:
+  jobs:
+    - name: no-ai-credit
+      run: '! grep -qiE "co-authored-by:|generated with \[?(claude|codex)|noreply@(anthropic|openai)\.com" {1}'
