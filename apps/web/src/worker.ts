@@ -5,11 +5,7 @@ import * as HttpServerResponse from "effect/http/HttpServerResponse";
 export default Cloudflare.Worker(
   "Web",
   { main: import.meta.url },
-  Effect.gen(function* () {
-    return {
-      fetch: Effect.gen(function* () {
-        return HttpServerResponse.text("Hello from OBM");
-      }),
-    };
+  Effect.succeed({
+    fetch: Effect.succeed(HttpServerResponse.text("Hello from OBM")),
   }),
 );
