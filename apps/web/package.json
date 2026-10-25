@@ -1,0 +1,5 @@
+{
+  "name": "@obm/web",
+  "private": true,
+  "type": "module"
+}

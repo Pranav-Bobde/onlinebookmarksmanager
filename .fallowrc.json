@@ -1,0 +1,9 @@
+{
+  "$schema": "./node_modules/fallow/schema.json",
+  "ignoreExports": [
+    {
+      "file": "tools/oxlint/anti-slop/shared/dictionary-types.ts",
+      "exports": ["isPopulatedObjectExpression"]
+    }
+  ]
+}
