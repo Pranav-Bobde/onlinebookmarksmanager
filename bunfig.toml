@@ -1,0 +1,6 @@
+[install]
+exact = true
+minimumReleaseAge = 432000
+
+[test]
+pathIgnorePatterns = ["rnd/**"]
