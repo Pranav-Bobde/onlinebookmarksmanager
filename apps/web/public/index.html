@@ -1,0 +1,2494 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>
+      Online bookmark manager for useful links | onlinebookmarksmanager.com
+    </title>
+    <meta name="robots" content="noindex" />
+    <meta
+      name="description"
+      content="An online bookmark manager for the links you mean to come back to. Paste a link. Later, type a word you remember from the page or your own note."
+    />
+    <meta
+      name="theme-color"
+      content="#F4F4F0"
+      media="(prefers-color-scheme: light)"
+    />
+    <meta
+      name="theme-color"
+      content="#0F0F0E"
+      media="(prefers-color-scheme: dark)"
+    />
+    <script>
+      (function () {
+        var d = document.documentElement,
+          t = null;
+        try {
+          t = localStorage.getItem("obm-theme");
+        } catch (e) {}
+        if (t !== "light" && t !== "dark")
+          t = matchMedia("(prefers-color-scheme: dark)").matches
+            ? "dark"
+            : "light";
+        d.setAttribute("data-theme", t);
+        d.classList.add("js");
+        if (!matchMedia("(prefers-reduced-motion: reduce)").matches)
+          d.classList.add("motion");
+      })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=Geist:wght@400..700&display=swap"
+    />
+    <style>
+      :root {
+        --paper: #f4f4f0;
+        --surface: #ffffff;
+        --ink: #121212;
+        --muted: #4a4a46;
+        --line: rgba(18, 18, 18, 0.16);
+        --focus: #121212;
+        --card-ink: #121212;
+        --card-muted: rgba(18, 18, 18, 0.78);
+        --c-sun: #ffd23f;
+        --c-lime: #c6f24e;
+        --c-pink: #ff9fcb;
+        --c-tang: #ff7a45;
+        --c-sky: #7fd3ff;
+        --c-mint: #6ee7b7;
+        --c-peach: #f7c59f;
+        --c-grey: #d6d6ce;
+        --miss-bg: #1b1b1a;
+        --miss-ink: #f1f1ec;
+        --display: "Bricolage Grotesque", "Arial Narrow", system-ui, sans-serif;
+        --body: "Geist", ui-sans-serif, system-ui, sans-serif;
+        --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+        --ease-spring: cubic-bezier(0.34, 1.4, 0.5, 1);
+        --gutter: clamp(20px, 4vw, 48px);
+        color-scheme: light;
+      }
+      [data-theme="dark"] {
+        --paper: #0f0f0e;
+        --surface: #1a1a19;
+        --ink: #f1f1ec;
+        --muted: #b0b0aa;
+        --line: rgba(241, 241, 236, 0.18);
+        --focus: #f1f1ec;
+        --miss-bg: #262624;
+        color-scheme: dark;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      html {
+        -webkit-text-size-adjust: 100%;
+        scroll-padding-top: 80px;
+      }
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font: 400 1.0625rem/1.6 var(--body);
+        -webkit-font-smoothing: antialiased;
+        transition:
+          background-color 0.25s ease,
+          color 0.25s ease;
+      }
+      @media (pointer: fine) {
+        html {
+          overscroll-behavior: none;
+        }
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: var(--display);
+        text-wrap: balance;
+        margin: 0;
+      }
+      p {
+        text-wrap: pretty;
+        margin: 0;
+      }
+      a {
+        color: inherit;
+      }
+      a,
+      button,
+      input,
+      textarea,
+      label,
+      summary {
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+      }
+      :focus-visible {
+        outline: 3px solid var(--focus);
+        outline-offset: 3px;
+        border-radius: 6px;
+      }
+      .cc :focus-visible {
+        outline-color: var(--card-ink);
+      }
+      .cc-miss :focus-visible {
+        outline-color: var(--miss-ink);
+      }
+      ::selection {
+        background: var(--c-sun);
+        color: #121212;
+      }
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+        border: 0;
+      }
+      .skip {
+        position: absolute;
+        left: 12px;
+        top: -60px;
+        z-index: 50;
+        background: var(--ink);
+        color: var(--paper);
+        padding: 10px 16px;
+        border-radius: 999px;
+        text-decoration: none;
+        font-weight: 600;
+      }
+      .skip:focus {
+        top: 12px;
+      }
+      .wrap {
+        width: min(1240px, 100% - 2 * var(--gutter));
+        margin-inline: auto;
+      }
+      .label {
+        font: 600 0.78rem/1.25 var(--body);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .site-head {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        background: color-mix(in srgb, var(--paper) 90%, transparent);
+        backdrop-filter: saturate(1.4) blur(10px);
+        -webkit-backdrop-filter: saturate(1.4) blur(10px);
+        border-bottom: 1px solid var(--line);
+      }
+      .site-head .wrap {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        height: 64px;
+      }
+      .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        text-decoration: none;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        min-height: 44px;
+        min-width: 0;
+      }
+      .brand-mark {
+        position: relative;
+        width: 26px;
+        height: 20px;
+        flex: none;
+      }
+      .brand-mark i {
+        position: absolute;
+        inset: 0;
+        border-radius: 5px;
+        border: 1.5px solid #121212;
+      }
+      .brand-mark i:nth-child(1) {
+        background: var(--c-pink);
+        transform: rotate(10deg) translate(4px, -1px);
+      }
+      .brand-mark i:nth-child(2) {
+        background: var(--c-lime);
+        transform: rotate(4deg) translate(2px, 0);
+      }
+      .brand-mark i:nth-child(3) {
+        background: var(--c-sun);
+        transform: rotate(-5deg);
+      }
+      .brand span:last-child {
+        font-size: 0.98rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .nav {
+        display: none;
+        gap: 4px;
+        margin-left: auto;
+      }
+      .nav a {
+        text-decoration: none;
+        padding: 10px 14px;
+        border-radius: 999px;
+        font-size: 0.95rem;
+        color: var(--muted);
+        transition:
+          color 0.15s ease,
+          background-color 0.15s ease;
+      }
+      .nav a:hover {
+        color: var(--ink);
+        background: var(--line);
+      }
+      .theme-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        flex: none;
+        min-height: 44px;
+        padding: 0 16px;
+        border-radius: 999px;
+        margin-left: auto;
+        border: 1.5px solid var(--line);
+        background: transparent;
+        color: var(--ink);
+        font: 500 0.92rem var(--body);
+        cursor: pointer;
+        transition:
+          border-color 0.15s ease,
+          background-color 0.15s ease;
+      }
+      .theme-btn:hover {
+        border-color: var(--ink);
+      }
+      .theme-dot {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        border: 1.5px solid currentColor;
+        background: linear-gradient(90deg, currentColor 50%, transparent 50%);
+      }
+      @media (min-width: 900px) {
+        .nav {
+          display: flex;
+        }
+        .theme-btn {
+          margin-left: 0;
+        }
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        min-height: 56px;
+        padding: 0 26px;
+        border-radius: 999px;
+        font: 600 1.05rem/1 var(--body);
+        text-decoration: none;
+        white-space: nowrap;
+        cursor: pointer;
+        border: 2px solid var(--ink);
+        transition:
+          transform 0.18s var(--ease-out),
+          background-color 0.15s ease,
+          color 0.15s ease,
+          box-shadow 0.18s ease;
+      }
+      .btn:active {
+        transform: translateY(1px) scale(0.98);
+      }
+      .btn-primary {
+        background: var(--ink);
+        color: var(--paper);
+      }
+      .btn-primary:hover {
+        box-shadow: 0 0 0 4px color-mix(in srgb, var(--c-sun) 85%, transparent);
+      }
+      .btn-secondary {
+        background: transparent;
+        color: var(--ink);
+      }
+      .btn-secondary:hover {
+        background: var(--ink);
+        color: var(--paper);
+      }
+      .btn .arrow {
+        transition: transform 0.18s var(--ease-out);
+      }
+      .btn:hover .arrow {
+        transform: translateX(3px);
+      }
+
+      .hero {
+        padding: 28px 0 44px;
+      }
+      .hero .wrap {
+        display: grid;
+        gap: 32px;
+      }
+      .wip {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--muted);
+        margin-bottom: 16px;
+      }
+      .wip::before {
+        content: "";
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--c-tang);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-tang) 30%, transparent);
+      }
+      .hero h1 {
+        font-size: clamp(2.7rem, 11.2vw, 6.4rem);
+        font-weight: 800;
+        font-stretch: 82%;
+        line-height: 1;
+        letter-spacing: -0.01em;
+      }
+      .hero h1 .hl {
+        display: block;
+      }
+      .hero h1 .hl + .hl span {
+        text-decoration: underline;
+        text-decoration-color: var(--c-tang);
+        text-decoration-thickness: 0.09em;
+        text-underline-offset: 0.1em;
+        text-decoration-skip-ink: auto;
+      }
+      .hero-sub {
+        margin-top: 18px;
+        font-size: clamp(1.12rem, 1.5vw, 1.3rem);
+        line-height: 1.5;
+        color: var(--muted);
+        max-width: 36ch;
+      }
+      .hero-sub strong {
+        color: var(--ink);
+        font-weight: 600;
+      }
+      .hero-ctas {
+        display: grid;
+        gap: 10px;
+        margin-top: 24px;
+      }
+
+      .deck {
+        position: relative;
+        width: calc(100% - 14px);
+        margin-bottom: 14px;
+      }
+      .deck::before,
+      .deck::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: 20px;
+        border: 2px solid #121212;
+        z-index: 0;
+      }
+      .deck::before {
+        background: var(--c-pink);
+        transform: translate(14px, 14px);
+      }
+      .deck::after {
+        background: var(--c-lime);
+        transform: translate(7px, 7px);
+      }
+      .deck > .cc {
+        position: relative;
+        z-index: 1;
+        --r: 0deg;
+      }
+      html.motion .deck::before {
+        animation: fan-a 0.9s 0.15s var(--ease-spring) both;
+      }
+      html.motion .deck::after {
+        animation: fan-b 0.9s 0.05s var(--ease-spring) both;
+      }
+      html.motion .deck > .cc {
+        animation: card-in 0.8s var(--ease-out) both;
+      }
+      @keyframes fan-a {
+        from {
+          transform: translate(0, 0);
+        }
+      }
+      @keyframes fan-b {
+        from {
+          transform: translate(0, 0);
+        }
+      }
+      @keyframes card-in {
+        from {
+          opacity: 0;
+          transform: translateY(24px);
+        }
+      }
+
+      @media (max-width: 639px) {
+        .deck .cc-tip {
+          display: none;
+        }
+      }
+      @media (min-width: 640px) {
+        .hero-ctas {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 12px;
+        }
+      }
+      @media (min-width: 960px) {
+        .hero {
+          padding: clamp(48px, 8vh, 96px) 0 clamp(64px, 10vh, 112px);
+        }
+        .hero .wrap {
+          grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+          gap: clamp(40px, 5vw, 72px);
+          align-items: center;
+        }
+        .hero-sub {
+          margin-top: 26px;
+        }
+        .hero-ctas {
+          margin-top: 34px;
+        }
+        .deck {
+          justify-self: center;
+          width: min(100% - 40px, 520px);
+          margin-bottom: 0;
+        }
+        .deck::before {
+          transform: rotate(7deg) translate(18px, 6px);
+        }
+        .deck::after {
+          transform: rotate(3deg) translate(9px, 2px);
+        }
+        .deck > .cc {
+          --r: -3deg;
+        }
+        @keyframes fan-a {
+          from {
+            transform: rotate(-3deg) translate(0, 0);
+          }
+        }
+        @keyframes fan-b {
+          from {
+            transform: rotate(-3deg) translate(0, 0);
+          }
+        }
+        @keyframes card-in {
+          from {
+            opacity: 0;
+            transform: translateY(28px) rotate(-8deg);
+          }
+        }
+      }
+
+      .cc {
+        --bg: var(--c-sun);
+        --r: 0deg;
+        --rx: 0deg;
+        --ry: 0deg;
+        container-type: inline-size;
+        position: relative;
+        background: var(--bg);
+        color: var(--card-ink);
+        border: 2px solid #121212;
+        border-radius: 20px;
+        padding: clamp(18px, 4cqi, 30px);
+        transform: perspective(1000px) rotate(var(--r)) rotateX(var(--rx))
+          rotateY(var(--ry));
+        transition: transform 0.35s var(--ease-out);
+        box-shadow:
+          0 1px 0 rgba(0, 0, 0, 0.25),
+          0 24px 48px -24px rgba(0, 0, 0, 0.45);
+      }
+      .cc-top {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid #121212;
+        font-variant-numeric: tabular-nums;
+      }
+      .cc-series {
+        margin-left: auto;
+      }
+      .cc-badge {
+        border: 1.5px solid #121212;
+        border-radius: 999px;
+        padding: 4px 9px;
+      }
+      .cc-row {
+        display: grid;
+        gap: 4px;
+        padding: 12px 0;
+        border-bottom: 1.5px dashed rgba(18, 18, 18, 0.45);
+      }
+      .cc-k {
+        color: var(--card-muted);
+      }
+      .cc-k b {
+        color: var(--card-ink);
+        font-weight: 800;
+      }
+      .cc-v {
+        min-width: 0;
+      }
+      .cc-link .cc-v {
+        font: 500 1rem/1.45 var(--body);
+        overflow-wrap: anywhere;
+      }
+      .cc-link a.cc-v {
+        text-underline-offset: 3px;
+      }
+      .cc-clue {
+        padding: 14px 0 16px;
+      }
+      .cc-big {
+        font-family: var(--display);
+        font-weight: 800;
+        font-stretch: 85%;
+        font-size: clamp(2.4rem, 13cqi, 4.6rem);
+        line-height: 1.02;
+        letter-spacing: -0.01em;
+        overflow-wrap: anywhere;
+        padding-bottom: 0.06em;
+      }
+      .cc-tagline {
+        margin-top: 6px;
+        font-weight: 600;
+        font-size: 0.98rem;
+      }
+      .cc-pair {
+        display: grid;
+        gap: 0;
+      }
+      .cc-result strong {
+        display: block;
+        font-family: var(--display);
+        font-weight: 700;
+        font-size: 1.3rem;
+        line-height: 1.2;
+        letter-spacing: 0;
+      }
+      .cc-meta {
+        display: block;
+        font-size: 0.95rem;
+        color: var(--card-muted);
+        margin-top: 2px;
+      }
+      .cc-why ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 4px;
+        font-size: 1rem;
+      }
+      .term {
+        font-weight: 700;
+        background: rgba(18, 18, 18, 0.1);
+        border-radius: 6px;
+        padding: 0 0.3em;
+      }
+      .cc-snip {
+        margin: 8px 0 0;
+        font-size: 1rem;
+        line-height: 1.5;
+        padding-left: 12px;
+        border-left: 3px solid #121212;
+      }
+      .cc mark {
+        background: #121212;
+        color: var(--bg);
+        padding: 0 0.18em;
+        border-radius: 3px;
+        font-weight: 600;
+      }
+      .cc-fail {
+        display: inline-flex;
+        margin-top: 8px;
+        font: 600 0.9rem/1.3 var(--body);
+        border: 1.5px solid #121212;
+        border-radius: 999px;
+        padding: 6px 12px;
+      }
+      .cc-tip {
+        padding-top: 12px;
+        display: grid;
+        gap: 4px;
+      }
+      .cc-tip p {
+        font-size: 1.04rem;
+        line-height: 1.5;
+        font-weight: 500;
+      }
+      @container (min-width: 600px) {
+        .cc-row {
+          grid-template-columns: 11.5rem minmax(0, 1fr);
+          gap: 16px;
+          align-items: baseline;
+        }
+        .cc-pair {
+          grid-template-columns: 1fr 1fr;
+          column-gap: 28px;
+          border-bottom: 1.5px dashed rgba(18, 18, 18, 0.45);
+        }
+        .cc-pair .cc-row {
+          grid-template-columns: 1fr;
+          border-bottom: 0;
+        }
+        .cc-tip {
+          grid-template-columns: 11.5rem minmax(0, 1fr);
+          gap: 16px;
+          align-items: baseline;
+        }
+      }
+      .try-pill {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+        padding: 0 16px;
+        margin-top: 10px;
+        border-radius: 999px;
+        border: 2px solid currentColor;
+        font-weight: 700;
+        text-decoration: none;
+        transition:
+          background-color 0.15s ease,
+          color 0.15s ease;
+      }
+
+      .cc-miss {
+        --bg: var(--miss-bg);
+        color: var(--miss-ink);
+        border: 2px dashed color-mix(in srgb, var(--miss-ink) 55%, transparent);
+        background:
+          repeating-linear-gradient(
+            -45deg,
+            transparent 0 14px,
+            rgba(255, 255, 255, 0.035) 14px 28px
+          ),
+          var(--miss-bg);
+      }
+      .cc-miss .cc-top {
+        border-color: color-mix(in srgb, var(--miss-ink) 60%, transparent);
+      }
+      .cc-miss .cc-badge {
+        border-color: var(--miss-ink);
+      }
+      .cc-miss .cc-row,
+      .cc-miss .cc-pair {
+        border-color: color-mix(in srgb, var(--miss-ink) 35%, transparent);
+      }
+      .cc-miss .cc-k {
+        color: color-mix(in srgb, var(--miss-ink) 80%, transparent);
+      }
+      .cc-miss .cc-k b {
+        color: var(--miss-ink);
+      }
+      .cc-miss .cc-meta {
+        color: color-mix(in srgb, var(--miss-ink) 80%, transparent);
+      }
+      .cc-miss .term {
+        background: rgba(255, 255, 255, 0.12);
+      }
+      .cc-miss .cc-big {
+        text-decoration: line-through;
+        text-decoration-thickness: 0.08em;
+        text-decoration-color: var(--c-tang);
+      }
+      .cc-miss .cc-snip {
+        border-color: var(--c-tang);
+      }
+      .cc-miss .try-pill:hover {
+        background: var(--miss-ink);
+        color: var(--miss-bg);
+      }
+      .stamp {
+        display: inline-block;
+        font: 800 1.3rem/1 var(--display);
+        font-stretch: 85%;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        color: var(--c-tang);
+        border: 2.5px solid var(--c-tang);
+        border-radius: 8px;
+        padding: 6px 10px;
+        transform: rotate(-4deg);
+        margin: 4px 0;
+      }
+
+      section {
+        position: relative;
+      }
+      .sec-head {
+        max-width: 760px;
+        margin-bottom: clamp(24px, 5vw, 56px);
+      }
+      .sec-head h2 {
+        font-size: clamp(2.2rem, 5.4vw, 4.4rem);
+        font-weight: 800;
+        font-stretch: 85%;
+        line-height: 1;
+        letter-spacing: -0.015em;
+      }
+      .sec-head p {
+        margin-top: 14px;
+        font-size: 1.13rem;
+        color: var(--muted);
+        max-width: 54ch;
+      }
+
+      .try {
+        padding: clamp(48px, 9vw, 112px) 0;
+        background: var(--surface);
+        border-block: 2px solid var(--ink);
+      }
+      .try-grid {
+        display: grid;
+        gap: 24px;
+      }
+      .search-form {
+        display: grid;
+        gap: 8px;
+      }
+      .field-label {
+        display: block;
+        font: 700 1rem/1.3 var(--body);
+      }
+      .search-box input {
+        width: 100%;
+        min-height: 64px;
+        padding: 0 18px;
+        font: 600 1.35rem var(--display);
+        letter-spacing: 0;
+        color: var(--ink);
+        background: var(--paper);
+        border: 2px solid var(--ink);
+        border-radius: 14px;
+        transition: box-shadow 0.15s ease;
+      }
+      .search-box input::placeholder {
+        color: var(--muted);
+        opacity: 1;
+        font-weight: 500;
+      }
+      .search-box input:focus-visible {
+        outline: none;
+        box-shadow:
+          0 0 0 4px var(--c-sun),
+          0 0 0 6px var(--ink);
+      }
+      .hint {
+        font-size: 0.98rem;
+        color: var(--muted);
+      }
+      .chip-group {
+        display: grid;
+        gap: 10px;
+      }
+      .chip-group > span {
+        font: 700 1rem/1.3 var(--body);
+      }
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .chip {
+        min-height: 48px;
+        padding: 0 18px;
+        border-radius: 999px;
+        border: 1.5px solid var(--line);
+        background: transparent;
+        color: var(--ink);
+        font: 500 1rem var(--body);
+        cursor: pointer;
+        transition:
+          border-color 0.15s ease,
+          background-color 0.15s ease,
+          color 0.15s ease,
+          transform 0.15s var(--ease-out);
+      }
+      .chip:hover {
+        border-color: var(--ink);
+      }
+      .chip:active {
+        transform: scale(0.97);
+      }
+      .chip.sugg {
+        font-weight: 600;
+        border-color: color-mix(in srgb, var(--ink) 40%, transparent);
+      }
+      .chip.sugg[data-expect="miss"] {
+        border-style: dashed;
+      }
+      .chip[aria-pressed="true"] {
+        background: var(--ink);
+        color: var(--paper);
+        border-color: var(--ink);
+      }
+      .fields {
+        font-size: 0.98rem;
+        color: var(--muted);
+        border-top: 1px solid var(--line);
+        padding-top: 16px;
+      }
+      .fields strong {
+        color: var(--ink);
+        font-weight: 600;
+      }
+
+      .results-col {
+        min-width: 0;
+      }
+      .results-head {
+        display: grid;
+        gap: 4px;
+        margin-bottom: 14px;
+      }
+      .count {
+        font: 700 1.05rem var(--body);
+        font-variant-numeric: tabular-nums;
+      }
+      .sample-label {
+        font-size: 0.9rem;
+        line-height: 1.4;
+        color: var(--muted);
+      }
+      .results {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 20px;
+      }
+      .results .cc-big {
+        font-size: clamp(2.1rem, 10cqi, 3.4rem);
+      }
+      html.motion .results .pop {
+        animation: pop 0.45s var(--ease-spring) both;
+      }
+      html.motion .results .pop:nth-child(2) {
+        animation-delay: 0.05s;
+      }
+      html.motion .results .pop:nth-child(3) {
+        animation-delay: 0.1s;
+      }
+      @keyframes pop {
+        from {
+          opacity: 0;
+          transform: translateY(14px) scale(0.98);
+        }
+      }
+      .placeholder-card {
+        border: 2px dashed var(--line);
+        border-radius: 20px;
+        padding: 24px;
+        display: grid;
+        gap: 8px;
+        align-content: center;
+        min-height: 180px;
+      }
+      .placeholder-card .ph-big {
+        font: 800 clamp(1.8rem, 4vw, 3rem)/1.05 var(--display);
+        font-stretch: 85%;
+        color: var(--muted);
+      }
+      .placeholder-card p {
+        color: var(--muted);
+        max-width: 46ch;
+      }
+
+      @media (min-width: 900px) {
+        .try-grid {
+          grid-template-columns: minmax(0, 400px) minmax(0, 1fr);
+          grid-template-areas: "search results" "sugg results" "tags results" "fields results" ". results";
+          grid-template-rows: auto auto auto auto 1fr;
+          column-gap: clamp(28px, 4vw, 64px);
+          row-gap: 24px;
+          align-items: start;
+        }
+        .search-form {
+          grid-area: search;
+        }
+        .sugg-group {
+          grid-area: sugg;
+        }
+        .tags-group {
+          grid-area: tags;
+        }
+        .fields {
+          grid-area: fields;
+        }
+        .results-col {
+          grid-area: results;
+        }
+        .results {
+          min-height: 420px;
+        }
+        .placeholder-card {
+          min-height: 360px;
+          padding: 28px;
+        }
+        .results-head {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: baseline;
+          justify-content: space-between;
+          gap: 8px 20px;
+        }
+      }
+
+      .sequence {
+        padding: clamp(56px, 10vw, 128px) 0;
+      }
+      .stack {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 28px;
+      }
+      .stack > li {
+        width: min(100%, 900px);
+      }
+      @media (min-width: 900px) {
+        .stack {
+          gap: clamp(28px, 6vh, 64px);
+        }
+        .stack > li:nth-child(even) {
+          justify-self: end;
+        }
+        .stack > li:nth-child(1) .cc {
+          --r: -1.4deg;
+        }
+        .stack > li:nth-child(2) .cc {
+          --r: 1.2deg;
+        }
+        .stack > li:nth-child(3) .cc {
+          --r: -0.8deg;
+        }
+        .stack > li:nth-child(4) .cc {
+          --r: 1.6deg;
+        }
+      }
+      @media (min-width: 900px) and (min-height: 760px) {
+        .stack > li {
+          position: sticky;
+          top: calc(92px + var(--i) * 22px);
+        }
+      }
+      html.motion .reveal {
+        opacity: 0;
+        transform: translateY(40px);
+        transition:
+          opacity 0.7s var(--ease-out),
+          transform 0.9s var(--ease-spring);
+      }
+      html.motion .reveal.in {
+        opacity: 1;
+        transform: none;
+      }
+      @media (min-width: 900px) {
+        html.motion .reveal {
+          transform: translateY(56px) rotate(3deg);
+        }
+      }
+
+      .sources {
+        padding: clamp(56px, 10vw, 128px) 0;
+        border-top: 2px solid var(--ink);
+      }
+      .tiles {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+      .tile {
+        background: var(--bg);
+        color: #121212;
+        border: 2px solid #121212;
+        border-radius: 18px;
+        padding: 16px;
+        display: grid;
+        gap: 8px;
+        align-content: start;
+        min-height: 150px;
+      }
+      .tile .label {
+        color: rgba(18, 18, 18, 0.78);
+      }
+      .tile p {
+        font: 700 1.15rem/1.25 var(--display);
+        font-stretch: 90%;
+      }
+      .illus {
+        margin-top: 12px;
+        font-size: 0.92rem;
+        color: var(--muted);
+      }
+      .how {
+        margin-top: clamp(32px, 5vw, 56px);
+        display: grid;
+        gap: 20px;
+        border: 2px solid var(--ink);
+        border-radius: 20px;
+        padding: clamp(20px, 3vw, 32px);
+        background: var(--surface);
+      }
+      .how h3 {
+        font-size: clamp(1.6rem, 3vw, 2.2rem);
+        font-weight: 800;
+        font-stretch: 85%;
+        line-height: 1.05;
+      }
+      .steps {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 14px;
+        counter-reset: s;
+      }
+      .steps li {
+        display: grid;
+        grid-template-columns: 44px minmax(0, 1fr);
+        gap: 14px;
+        align-items: center;
+        font-size: 1.08rem;
+      }
+      .steps li::before {
+        counter-increment: s;
+        content: counter(s);
+        display: grid;
+        place-items: center;
+        width: 44px;
+        height: 44px;
+        border-radius: 999px;
+        background: var(--c-sun);
+        color: #121212;
+        border: 2px solid #121212;
+        font: 800 1.2rem/1 var(--display);
+      }
+      .steps strong {
+        font-weight: 700;
+      }
+      .how-note {
+        color: var(--muted);
+        font-size: 1rem;
+        border-top: 1px solid var(--line);
+        padding-top: 14px;
+      }
+      @media (min-width: 760px) {
+        .tiles {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 16px;
+        }
+        .tile {
+          padding: 20px;
+          min-height: 170px;
+        }
+        .tile p {
+          font-size: 1.35rem;
+        }
+        .tiles li:nth-child(odd) .tile {
+          transform: rotate(-1deg);
+        }
+        .tiles li:nth-child(even) .tile {
+          transform: rotate(1deg);
+        }
+      }
+      @media (min-width: 900px) {
+        .how {
+          grid-template-columns: minmax(0, 4fr) minmax(0, 7fr);
+          align-items: start;
+          column-gap: 48px;
+        }
+        .how-note {
+          grid-column: 2;
+        }
+      }
+
+      .faq {
+        padding: clamp(56px, 10vw, 128px) 0;
+        border-top: 2px solid var(--ink);
+      }
+      .faq-grid {
+        display: grid;
+        gap: 8px;
+      }
+      .faq-list {
+        border-top: 2px solid var(--ink);
+      }
+      .faq-list details {
+        border-bottom: 1.5px solid var(--line);
+      }
+      .faq-list summary {
+        list-style: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        min-height: 64px;
+        padding: 14px 0;
+        font: 700 clamp(1.12rem, 1.6vw, 1.3rem)/1.3 var(--display);
+      }
+      .faq-list summary::-webkit-details-marker {
+        display: none;
+      }
+      .faq-list summary::after {
+        content: "+";
+        flex: none;
+        display: grid;
+        place-items: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 999px;
+        border: 1.5px solid var(--ink);
+        font: 500 1.3rem/1 var(--body);
+        transition:
+          transform 0.25s var(--ease-out),
+          background-color 0.15s ease,
+          color 0.15s ease;
+      }
+      .faq-list details[open] summary::after {
+        transform: rotate(45deg);
+        background: var(--ink);
+        color: var(--paper);
+      }
+      .faq-list details p {
+        padding: 0 0 22px;
+        color: var(--muted);
+        max-width: 62ch;
+      }
+      .faq-list details p strong {
+        color: var(--ink);
+      }
+      @media (min-width: 900px) {
+        .faq-grid {
+          grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+          gap: clamp(28px, 5vw, 72px);
+          align-items: start;
+        }
+        .faq-grid .sec-head {
+          position: sticky;
+          top: 100px;
+        }
+        .faq-list details p {
+          padding-right: 52px;
+        }
+      }
+
+      .ea {
+        padding: clamp(56px, 10vw, 128px) 0;
+        background: var(--c-sun);
+        color: #121212;
+        border-top: 2px solid #121212;
+      }
+      .ea .sec-head p {
+        color: rgba(18, 18, 18, 0.82);
+      }
+      .ea-grid {
+        display: grid;
+        gap: 8px;
+      }
+      .ea-form {
+        background: #ffffff;
+        color: #121212;
+        border: 2px solid #121212;
+        border-radius: 20px;
+        padding: clamp(20px, 3vw, 32px);
+        display: grid;
+        gap: 20px;
+        box-shadow: 0 24px 48px -24px rgba(0, 0, 0, 0.45);
+        color-scheme: light;
+      }
+      .ea-form :focus-visible {
+        outline-color: #121212;
+      }
+      .ea-form label {
+        font: 600 1rem/1.35 var(--body);
+      }
+      .ea-form .opt {
+        font-weight: 400;
+        color: #4a4a46;
+      }
+      .ea-form input[type="email"],
+      .ea-form textarea {
+        width: 100%;
+        margin-top: 8px;
+        padding: 14px 16px;
+        font: 400 1.0625rem/1.5 var(--body);
+        color: #121212;
+        background: #f4f4f0;
+        border: 2px solid #121212;
+        border-radius: 14px;
+      }
+      .ea-form input[type="email"] {
+        min-height: 56px;
+      }
+      .ea-form textarea {
+        min-height: 112px;
+        resize: vertical;
+      }
+      .ea-form input::placeholder,
+      .ea-form textarea::placeholder {
+        color: #5e5e59;
+        opacity: 1;
+      }
+      .ea-form input[aria-invalid="true"] {
+        border-color: #b42318;
+        box-shadow: 0 0 0 3px rgba(180, 35, 24, 0.18);
+      }
+      .ea-error {
+        color: #b42318;
+        font-weight: 600;
+        font-size: 0.98rem;
+        margin-top: 8px;
+      }
+      .counter {
+        display: block;
+        text-align: right;
+        font: 500 0.85rem var(--body);
+        color: #4a4a46;
+        margin-top: 6px;
+        font-variant-numeric: tabular-nums;
+      }
+      .check {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        min-height: 44px;
+        cursor: pointer;
+        font-weight: 500 !important;
+      }
+      .check input {
+        width: 24px;
+        height: 24px;
+        margin: 0;
+        accent-color: #121212;
+        flex: none;
+      }
+      .form-label {
+        font-size: 0.92rem;
+        line-height: 1.4;
+        color: #4a4a46;
+        padding: 10px 12px;
+        border: 1.5px dashed rgba(18, 18, 18, 0.4);
+        border-radius: 12px;
+      }
+      .ea-form .btn {
+        border-color: #121212;
+        background: #121212;
+        color: #ffffff;
+      }
+      .ea-form .btn:hover {
+        box-shadow: 0 0 0 4px var(--c-pink);
+      }
+      .ea-success {
+        background: var(--c-lime);
+        border: 2px solid #121212;
+        border-radius: 12px;
+        padding: 14px 16px;
+        font-weight: 600;
+      }
+      @media (min-width: 900px) {
+        .ea-grid {
+          grid-template-columns: minmax(0, 1fr) minmax(0, 560px);
+          gap: clamp(28px, 5vw, 72px);
+          align-items: start;
+        }
+        .ea-form {
+          transform: rotate(1deg);
+        }
+        .ea-form .btn {
+          justify-self: start;
+        }
+      }
+
+      .site-foot {
+        padding: 32px 0 calc(32px + env(safe-area-inset-bottom));
+        border-top: 2px solid var(--ink);
+        font-size: 0.95rem;
+        color: var(--muted);
+      }
+      .site-foot .wrap {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 24px;
+        justify-content: space-between;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation: none !important;
+          transition-duration: 0s !important;
+          scroll-behavior: auto !important;
+        }
+        .reveal {
+          opacity: 1 !important;
+          transform: none !important;
+        }
+        .cc {
+          --rx: 0deg !important;
+          --ry: 0deg !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+
+    <header class="site-head">
+      <div class="wrap">
+        <a
+          class="brand"
+          href="#top"
+          aria-label="onlinebookmarksmanager.com, back to top"
+        >
+          <span class="brand-mark" aria-hidden="true"
+            ><i></i><i></i><i></i
+          ></span>
+          <span translate="no">onlinebookmarksmanager</span>
+        </a>
+        <nav class="nav" aria-label="Sections">
+          <a href="#try">Try it</a>
+          <a href="#cards">Examples</a>
+          <a href="#faq">Questions</a>
+          <a href="#early-access">Early access</a>
+        </nav>
+        <button
+          class="theme-btn"
+          type="button"
+          data-test="theme-toggle"
+          aria-label="Switch to dark theme"
+        >
+          <span class="theme-dot" aria-hidden="true"></span
+          ><span class="theme-text">Dark</span>
+        </button>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="hero" id="top" aria-labelledby="hero-h">
+        <div class="wrap">
+          <div>
+            <p class="wip label">Still being built. Not launched yet.</p>
+            <h1 id="hero-h">
+              <span class="hl">Save the link.</span>
+              <span class="hl">Skip the <span>filing.</span></span>
+            </h1>
+            <p class="hero-sub">
+              An <strong>online bookmark manager</strong> for links you mean to
+              come back to. Paste a link. No folders. Later, type one word you
+              remember from the page or your note.
+            </p>
+            <div class="hero-ctas">
+              <a class="btn btn-primary" href="#try" data-test="cta-primary"
+                >Try the sample search
+                <span class="arrow" aria-hidden="true">→</span></a
+              >
+              <a
+                class="btn btn-secondary"
+                href="#early-access"
+                data-test="cta-secondary"
+                >Request early access</a
+              >
+            </div>
+          </div>
+
+          <div class="deck">
+            <article
+              class="cc"
+              style="--bg: var(--c-sun)"
+              data-tilt
+              aria-label="Sample card 01: the word sumac finds a recipe you saved as dinner idea"
+            >
+              <header class="cc-top label">
+                <span>No.&nbsp;01</span
+                ><span class="cc-series">One link, one clue</span
+                ><span class="cc-badge">Sample</span>
+              </header>
+              <div class="cc-row cc-link">
+                <span class="cc-k label"><b>1</b>&ensp;Link you saved</span
+                ><span class="cc-v" translate="no"
+                  >seriouseats.com/one-pan-lemon-chicken-thighs</span
+                >
+              </div>
+              <div class="cc-row cc-clue">
+                <span class="cc-k label"
+                  ><b>2</b>&ensp;Word you remembered</span
+                >
+                <p class="cc-big">“sumac”</p>
+              </div>
+              <div class="cc-pair">
+                <div class="cc-row cc-result">
+                  <span class="cc-k label"><b>3</b>&ensp;Found it</span>
+                  <div class="cc-v">
+                    <strong>dinner idea</strong
+                    ><span class="cc-meta">Your title. Saved 12 days ago.</span>
+                  </div>
+                </div>
+                <div class="cc-row cc-why">
+                  <span class="cc-k label">Why it matched</span>
+                  <div class="cc-v">
+                    <ul>
+                      <li>
+                        <span class="term">sumac</span> was in the page text
+                      </li>
+                    </ul>
+                    <p class="cc-snip">
+                      Rub the thighs with <mark>sumac</mark>, garlic and lemon
+                      zest…
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <footer class="cc-tip">
+                <span class="cc-k label">Worth keeping</span>
+                <p>
+                  Sumac, garlic and lemon on chicken thighs. One pan, with
+                  potatoes. Dinner in about 40 minutes.
+                </p>
+              </footer>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="try" id="try" aria-labelledby="try-h">
+        <div class="wrap">
+          <div class="sec-head">
+            <h2 id="try-h">Try it with our sample links.</h2>
+            <p>
+              “I know I saw this somewhere.” Type a word you’d remember. You’ll
+              see which link it finds, and where the word was.
+            </p>
+          </div>
+
+          <div class="try-grid">
+            <form
+              class="search-form"
+              role="search"
+              id="search-form"
+              autocomplete="off"
+            >
+              <label class="field-label" for="q">A word you remember</label>
+              <div class="search-box">
+                <input
+                  id="q"
+                  name="q"
+                  type="search"
+                  data-test="sample-search"
+                  placeholder="sumac, socks, birthday…"
+                  spellcheck="false"
+                  autocapitalize="off"
+                  enterkeyhint="search"
+                  aria-describedby="q-hint"
+                />
+              </div>
+              <p class="hint" id="q-hint">Every word you type has to match.</p>
+            </form>
+
+            <div
+              class="chip-group sugg-group"
+              role="group"
+              aria-labelledby="sugg-label"
+            >
+              <span id="sugg-label">Or tap one</span>
+              <div class="chips" id="suggestions"></div>
+            </div>
+
+            <div class="results-col">
+              <div class="results-head">
+                <p class="count" id="count">8 sample links ready.</p>
+                <p class="sample-label" id="sample-label"></p>
+              </div>
+              <ul
+                class="results"
+                id="results"
+                aria-live="polite"
+                aria-describedby="sample-label"
+              >
+                <li class="placeholder-card">
+                  <span class="ph-big">Your card shows up here.</span>
+                  <p>
+                    Tap a word above, or type your own. Then look at “Why it
+                    matched”.
+                  </p>
+                </li>
+              </ul>
+              <noscript
+                ><p>
+                  The sample search needs JavaScript. The cards below show the
+                  same results.
+                </p></noscript
+              >
+            </div>
+
+            <div
+              class="chip-group tags-group"
+              role="group"
+              aria-labelledby="tags-label"
+            >
+              <span id="tags-label">Only show links tagged</span>
+              <div class="chips" id="tags"></div>
+            </div>
+
+            <p class="fields">
+              Search looks at <strong>the link</strong>,
+              <strong>the page title</strong>,
+              <strong>the words on the page</strong>,
+              <strong>your title</strong>, <strong>your note</strong> and
+              <strong>tags</strong>. It doesn’t guess other words that mean the
+              same thing.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="sequence" id="cards" aria-labelledby="cards-h">
+        <div class="wrap">
+          <div class="sec-head">
+            <h2 id="cards-h">You forget the title. You remember one word.</h2>
+            <p>
+              Each card is one saved link and the word that brought it back. The
+              last one is a miss, on purpose.
+            </p>
+          </div>
+
+          <ol class="stack">
+            <li class="reveal" style="--i: 0">
+              <article
+                class="cc"
+                style="--bg: var(--c-lime)"
+                data-tilt
+                aria-label="Sample card 02: tram pastel finds a Lisbon guide"
+              >
+                <header class="cc-top label">
+                  <span>No.&nbsp;02</span
+                  ><span class="cc-series">One link, one clue</span
+                  ><span class="cc-badge">Sample</span>
+                </header>
+                <div class="cc-row cc-link">
+                  <span class="cc-k label"><b>1</b>&ensp;Link you saved</span
+                  ><span class="cc-v" translate="no"
+                    >timeout.com/lisbon/things-to-do</span
+                  >
+                </div>
+                <div class="cc-row cc-clue">
+                  <span class="cc-k label"
+                    ><b>2</b>&ensp;Words you remembered</span
+                  >
+                  <p class="cc-big">“tram pastel”</p>
+                </div>
+                <div class="cc-pair">
+                  <div class="cc-row cc-result">
+                    <span class="cc-k label"><b>3</b>&ensp;Found it</span>
+                    <div class="cc-v">
+                      <strong>The best things to do in Lisbon</strong
+                      ><span class="cc-meta"
+                        >Page title. Saved 3 weeks ago.</span
+                      >
+                    </div>
+                  </div>
+                  <div class="cc-row cc-why">
+                    <span class="cc-k label">Why it matched</span>
+                    <div class="cc-v">
+                      <ul>
+                        <li>
+                          <span class="term">tram</span> was in the page text
+                        </li>
+                        <li>
+                          <span class="term">pastel</span> was in the page text
+                        </li>
+                      </ul>
+                      <p class="cc-snip">
+                        Ride the yellow <mark>tram</mark> 28 through Alfama,
+                        then queue for a warm <mark>pastel</mark> de nata in
+                        Belém.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <footer class="cc-tip">
+                  <span class="cc-k label">Worth keeping</span>
+                  <p>
+                    Take tram 28 through Alfama. Then get a warm pastel de nata
+                    in Belém. Go early to skip the crowds.
+                  </p>
+                </footer>
+              </article>
+            </li>
+
+            <li class="reveal" style="--i: 1">
+              <article
+                class="cc"
+                style="--bg: var(--c-pink)"
+                data-tilt
+                aria-label="Sample card 03: birthday finds a shop page that couldn’t be read, through your note"
+              >
+                <header class="cc-top label">
+                  <span>No.&nbsp;03</span
+                  ><span class="cc-series">One link, one clue</span
+                  ><span class="cc-badge">Sample</span>
+                </header>
+                <div class="cc-row cc-link">
+                  <span class="cc-k label"><b>1</b>&ensp;Link you saved</span
+                  ><span class="cc-v" translate="no"
+                    >etsy.com/listing/…/handmade-ceramic-planter</span
+                  >
+                </div>
+                <div class="cc-row cc-clue">
+                  <span class="cc-k label"
+                    ><b>2</b>&ensp;Word you remembered</span
+                  >
+                  <p class="cc-big">“birthday”</p>
+                </div>
+                <div class="cc-pair">
+                  <div class="cc-row cc-result">
+                    <span class="cc-k label"><b>3</b>&ensp;Found it</span>
+                    <div class="cc-v">
+                      <strong>etsy.com</strong
+                      ><span class="cc-meta">No title. Saved 6 days ago.</span
+                      ><span class="cc-fail"
+                        >Page couldn’t be read. Saved anyway.</span
+                      >
+                    </div>
+                  </div>
+                  <div class="cc-row cc-why">
+                    <span class="cc-k label">Why it matched</span>
+                    <div class="cc-v">
+                      <ul>
+                        <li>
+                          <span class="term">birthday</span> was in your note
+                        </li>
+                      </ul>
+                      <p class="cc-snip">
+                        mum’s <mark>birthday</mark>, the green one
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <footer class="cc-tip">
+                  <span class="cc-k label">Worth keeping</span>
+                  <p>
+                    The green handmade ceramic planter, for Mum. Some shops
+                    won’t let pages be read. The link was kept, and your
+                    five-word note did the rest.
+                  </p>
+                </footer>
+              </article>
+            </li>
+
+            <li class="reveal" style="--i: 2">
+              <article
+                class="cc"
+                style="--bg: var(--c-sky)"
+                data-tilt
+                aria-label="Sample card 04: socks finds a stand-up video through your note"
+              >
+                <header class="cc-top label">
+                  <span>No.&nbsp;04</span
+                  ><span class="cc-series">One link, one clue</span
+                  ><span class="cc-badge">Sample</span>
+                </header>
+                <div class="cc-row cc-link">
+                  <span class="cc-k label"><b>1</b>&ensp;Link you saved</span
+                  ><span class="cc-v" translate="no"
+                    >youtube.com/watch?v=Q8kL2mN4pZs</span
+                  >
+                </div>
+                <div class="cc-row cc-clue">
+                  <span class="cc-k label"
+                    ><b>2</b>&ensp;Word you remembered</span
+                  >
+                  <p class="cc-big">“socks”</p>
+                </div>
+                <div class="cc-pair">
+                  <div class="cc-row cc-result">
+                    <span class="cc-k label"><b>3</b>&ensp;Found it</span>
+                    <div class="cc-v">
+                      <strong>Stand-up special: full set</strong
+                      ><span class="cc-meta"
+                        >Page title. Saved 4 weeks ago.</span
+                      >
+                    </div>
+                  </div>
+                  <div class="cc-row cc-why">
+                    <span class="cc-k label">Why it matched</span>
+                    <div class="cc-v">
+                      <ul>
+                        <li>
+                          <span class="term">socks</span> was in your note
+                        </li>
+                      </ul>
+                      <p class="cc-snip">
+                        the bit about mismatched <mark>socks</mark>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <footer class="cc-tip">
+                  <span class="cc-k label">Worth keeping</span>
+                  <p>
+                    What people say in a video isn’t searched. Saving one? Add a
+                    few words about the bit you liked. That’s the part you’ll
+                    remember.
+                  </p>
+                </footer>
+              </article>
+            </li>
+
+            <li class="reveal" style="--i: 3">
+              <article
+                class="cc cc-miss"
+                data-tilt
+                aria-label="Sample card 05: an honest miss for laziness"
+              >
+                <header class="cc-top label">
+                  <span>No.&nbsp;05</span
+                  ><span class="cc-series">One link, one clue</span
+                  ><span class="cc-badge">Sample</span>
+                </header>
+                <div class="cc-row cc-link">
+                  <span class="cc-k label"><b>1</b>&ensp;Link you wanted</span
+                  ><span class="cc-v" translate="no"
+                    >nytimes.com/…/why-you-procrastinate…</span
+                  >
+                </div>
+                <div class="cc-row cc-clue">
+                  <span class="cc-k label"
+                    ><b>2</b>&ensp;Word you remembered</span
+                  >
+                  <p class="cc-big">“laziness”</p>
+                </div>
+                <div class="cc-pair">
+                  <div class="cc-row cc-result">
+                    <span class="cc-k label"><b>3</b>&ensp;Result</span>
+                    <div class="cc-v"><span class="stamp">No match</span></div>
+                  </div>
+                  <div class="cc-row cc-why">
+                    <span class="cc-k label">Why it missed</span>
+                    <div class="cc-v">
+                      <ul>
+                        <li>
+                          <span class="term">laziness</span> isn’t in any saved
+                          link
+                        </li>
+                      </ul>
+                      <p class="cc-snip">
+                        The page says “procrastinate”. Search matches the words
+                        that were saved, not what they mean.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <footer class="cc-tip">
+                  <span class="cc-k label">Worth keeping</span>
+                  <p>
+                    From the page you wanted: we put things off to escape bad
+                    feelings, not because we’re lazy. Use the page’s own word,
+                    or add a note in yours.<br /><a
+                      class="try-pill"
+                      href="?q=procrastinate#try"
+                      data-try="procrastinate"
+                      >Try “procrastinate”</a
+                    >
+                  </p>
+                </footer>
+              </article>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <section class="sources" id="sources" aria-labelledby="sources-h">
+        <div class="wrap">
+          <div class="sec-head">
+            <h2 id="sources-h">Good links turn up everywhere.</h2>
+            <p>
+              Then they get lost. Up the group chat, down your feed, in a tab
+              you closed.
+            </p>
+          </div>
+
+          <ul class="tiles">
+            <li>
+              <div class="tile" style="--bg: var(--c-lime)">
+                <span class="label">In the group chat</span>
+                <p>The Lisbon list a friend sent for the trip.</p>
+              </div>
+            </li>
+            <li>
+              <div class="tile" style="--bg: var(--c-pink)">
+                <span class="label">On Instagram</span>
+                <p>A little plant shop someone posted.</p>
+              </div>
+            </li>
+            <li>
+              <div class="tile" style="--bg: var(--c-sky)">
+                <span class="label">On YouTube</span>
+                <p>A stand-up clip you want to show your sister.</p>
+              </div>
+            </li>
+            <li>
+              <div class="tile" style="--bg: var(--c-sun)">
+                <span class="label">A recipe</span>
+                <p>A one-pan chicken dinner for a busy night.</p>
+              </div>
+            </li>
+            <li>
+              <div class="tile" style="--bg: var(--c-tang)">
+                <span class="label">Maybe buy later</span>
+                <p>Running shoes with room for wide feet.</p>
+              </div>
+            </li>
+            <li>
+              <div class="tile" style="--bg: var(--c-mint)">
+                <span class="label">Meant to read</span>
+                <p>That article on why we put things off.</p>
+              </div>
+            </li>
+          </ul>
+          <p class="illus">Examples to picture it. Not real saves.</p>
+
+          <div class="how">
+            <h3>How you save one</h3>
+            <ol class="steps">
+              <li>
+                <span
+                  ><strong>Copy the link.</strong> From the chat, the app,
+                  wherever it is.</span
+                >
+              </li>
+              <li>
+                <span
+                  ><strong>Paste it in.</strong> That’s the save. No folder to
+                  pick.</span
+                >
+              </li>
+              <li>
+                <span
+                  ><strong>Add a note if you like.</strong> A few words, in your
+                  own words. Optional.</span
+                >
+              </li>
+            </ol>
+            <p class="how-note">
+              On your phone? It’s a website that works on your phone. There’s no
+              app or share button yet, so you copy and paste.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="faq" id="faq" aria-labelledby="faq-h">
+        <div class="wrap faq-grid">
+          <div class="sec-head">
+            <h2 id="faq-h">Fair questions.</h2>
+            <p>
+              It’s still being built. Here’s what the first version will and
+              won’t do.
+            </p>
+          </div>
+          <div class="faq-list">
+            <details>
+              <summary>Do I need to be techy to use this?</summary>
+              <p>
+                No. Paste a link. That’s it. There’s nothing to set up and
+                nothing to sort.
+              </p>
+            </details>
+            <details>
+              <summary>
+                Do I have to sort links into folders or add tags?
+              </summary>
+              <p>
+                No. You just paste the link. A title, a note and tags are all
+                optional.
+              </p>
+            </details>
+            <details>
+              <summary>What if I only remember a word from the page?</summary>
+              <p>
+                That’s the idea. When the page can be read, its words are saved
+                too, so you can search them later. The word has to actually be
+                on the page.
+              </p>
+            </details>
+            <details>
+              <summary>
+                Will it understand a different word that means the same thing?
+              </summary>
+              <p>
+                No. It matches words, not meaning. “Laziness” won’t find a page
+                that says “procrastinate”. Card No.&nbsp;05 shows this. Try a
+                word the page would use, or add a short note in your own words
+                when you save.
+              </p>
+            </details>
+            <details>
+              <summary>
+                Can it find a video by something someone said in it?
+              </summary>
+              <p>
+                No. What people say in a video isn’t searched. The words on the
+                video’s page are, plus your note. Add a few words about the bit
+                you liked. Try “socks” in the sample search.
+              </p>
+            </details>
+            <details>
+              <summary>What if a page can’t be read?</summary>
+              <p>
+                Some sites block it.
+                <strong>The link is still saved.</strong> Add a title or a note
+                so you can find it later. Try “birthday” in the sample search.
+              </p>
+            </details>
+            <details>
+              <summary>Can I bring in my old bookmarks?</summary>
+              <p>
+                Not in the first version. There’s no import from your browser or
+                other apps. It’s for new links you paste.
+              </p>
+            </details>
+            <details>
+              <summary>
+                Is there a phone app, a browser button or a share button?
+              </summary>
+              <p>
+                Not yet. It’s a website that works on your phone and your
+                computer. Copy the link, open the site, paste it.
+              </p>
+            </details>
+            <details>
+              <summary>
+                Will it pull in what I saved on Instagram, YouTube or Reddit?
+              </summary>
+              <p>
+                No. It won’t connect to those accounts. You can paste any of
+                those links yourself.
+              </p>
+            </details>
+            <details>
+              <summary>Does it keep a copy if a website disappears?</summary>
+              <p>
+                No. It keeps the link and the words it read, not a copy of the
+                page. If the site goes down, the link won’t open.
+              </p>
+            </details>
+            <details>
+              <summary>Is it out now? What will it cost?</summary>
+              <p>It hasn’t launched yet. Pricing hasn’t been announced.</p>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      <section class="ea" id="early-access" aria-labelledby="ea-h">
+        <div class="wrap ea-grid">
+          <div class="sec-head">
+            <h2 id="ea-h">Want to try the real one?</h2>
+            <p>
+              Request early access. Tell us about a link you couldn’t find last
+              time. It helps decide what gets made next.
+            </p>
+          </div>
+
+          <form class="ea-form" id="ea-form" novalidate>
+            <div>
+              <label for="ea-email">Email</label>
+              <input
+                id="ea-email"
+                name="email"
+                type="email"
+                inputmode="email"
+                autocomplete="email"
+                spellcheck="false"
+                autocapitalize="off"
+                placeholder="you@example.com"
+                data-test="ea-email"
+                aria-describedby="ea-error"
+                required
+              />
+              <p
+                class="ea-error"
+                id="ea-error"
+                data-test="ea-error"
+                role="alert"
+                hidden
+              ></p>
+            </div>
+            <div>
+              <label for="ea-hard"
+                >What’s hardest about finding saved links?
+                <span class="opt">(optional)</span></label
+              >
+              <textarea
+                id="ea-hard"
+                name="hardest"
+                maxlength="600"
+                placeholder="A friend sent me a recipe in the group chat and I scrolled for ages to find it again…"
+                aria-describedby="ea-count"
+              ></textarea>
+              <span class="counter" id="ea-count" aria-live="off">0/600</span>
+            </div>
+            <label class="check" for="ea-test">
+              <input id="ea-test" name="tester" type="checkbox" />
+              <span>I’d like to test an early version and share feedback.</span>
+            </label>
+            <p class="form-label" id="form-label"></p>
+            <button class="btn" type="submit" data-test="ea-submit">
+              Request early access
+            </button>
+            <p
+              class="ea-success"
+              id="ea-success"
+              data-test="ea-success"
+              role="status"
+              hidden
+            ></p>
+          </form>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-foot">
+      <div class="wrap">
+        <span translate="no">onlinebookmarksmanager.com</span>
+        <span
+          >Still being built. Every card on this page uses sample links.</span
+        >
+      </div>
+    </footer>
+
+    <script>
+      (function () {
+        var html = document.documentElement;
+        var reduce = matchMedia("(prefers-reduced-motion: reduce)");
+        var reveals = document.querySelectorAll(".reveal");
+        if (
+          !html.classList.contains("motion") ||
+          !("IntersectionObserver" in window)
+        ) {
+          reveals.forEach(function (el) {
+            el.classList.add("in");
+          });
+        } else {
+          var io = new IntersectionObserver(
+            function (entries) {
+              entries.forEach(function (e) {
+                if (e.isIntersecting) {
+                  e.target.classList.add("in");
+                  io.unobserve(e.target);
+                }
+              });
+            },
+            { rootMargin: "0px 0px -8% 0px", threshold: 0.05 },
+          );
+          reveals.forEach(function (el) {
+            io.observe(el);
+          });
+        }
+        reduce.addEventListener("change", function (e) {
+          html.classList.toggle("motion", !e.matches);
+          if (e.matches)
+            reveals.forEach(function (el) {
+              el.classList.add("in");
+            });
+        });
+
+        var fine = matchMedia("(hover: hover) and (pointer: fine)");
+        document.addEventListener(
+          "pointermove",
+          function (e) {
+            if (!fine.matches || reduce.matches || e.pointerType !== "mouse")
+              return;
+            var card = e.target.closest && e.target.closest("[data-tilt]");
+            if (!card) return;
+            var r = card.getBoundingClientRect();
+            var x = (e.clientX - r.left) / r.width - 0.5,
+              y = (e.clientY - r.top) / r.height - 0.5;
+            card.style.setProperty("--ry", (x * 7).toFixed(2) + "deg");
+            card.style.setProperty("--rx", (-y * 7).toFixed(2) + "deg");
+          },
+          { passive: true },
+        );
+        document.addEventListener("pointerout", function (e) {
+          var card = e.target.closest && e.target.closest("[data-tilt]");
+          if (card && !card.contains(e.relatedTarget)) {
+            card.style.removeProperty("--rx");
+            card.style.removeProperty("--ry");
+          }
+        });
+      })();
+    </script>
+
+    <script type="module">
+      import {
+        search,
+        snippet,
+        escapeHtml,
+        ALL_TAGS,
+        SUGGESTED,
+        SAMPLE_LABEL,
+        FORM_LABEL,
+      } from "./sample-general.js";
+
+      const $ = (s) => document.querySelector(s);
+      const html = document.documentElement;
+      const motionOK = () => html.classList.contains("motion");
+
+      const themeBtn = $('[data-test="theme-toggle"]');
+      const syncThemeBtn = () => {
+        const dark = html.getAttribute("data-theme") === "dark";
+        themeBtn.setAttribute(
+          "aria-label",
+          dark ? "Switch to light theme" : "Switch to dark theme",
+        );
+        themeBtn.querySelector(".theme-text").textContent = dark
+          ? "Light"
+          : "Dark";
+        document
+          .querySelectorAll('meta[name="theme-color"]')
+          .forEach((m) =>
+            m.setAttribute("content", dark ? "#0F0F0E" : "#F4F4F0"),
+          );
+      };
+      themeBtn.addEventListener("click", () => {
+        const next =
+          html.getAttribute("data-theme") === "dark" ? "light" : "dark";
+        html.setAttribute("data-theme", next);
+        try {
+          localStorage.setItem("obm-theme", next);
+        } catch {}
+        syncThemeBtn();
+      });
+      matchMedia("(prefers-color-scheme: dark)").addEventListener(
+        "change",
+        (e) => {
+          let stored = null;
+          try {
+            stored = localStorage.getItem("obm-theme");
+          } catch {}
+          if (!stored) {
+            html.setAttribute("data-theme", e.matches ? "dark" : "light");
+            syncThemeBtn();
+          }
+        },
+      );
+      syncThemeBtn();
+
+      $("#sample-label").textContent = SAMPLE_LABEL;
+      $("#form-label").textContent = FORM_LABEL;
+
+      const input = $('[data-test="sample-search"]');
+      const resultsEl = $("#results");
+      const countEl = $("#count");
+      const selectedTags = new Set();
+
+      const COLORS = {
+        recipe: "--c-sun",
+        lisbon: "--c-lime",
+        gift: "--c-pink",
+        video: "--c-sky",
+        sleep: "--c-mint",
+        shoes: "--c-tang",
+        procrastinate: "--c-peach",
+        tap: "--c-grey",
+      };
+      const TEXT_FIELDS = ["pageText", "siteTitle", "userTitle", "note", "url"];
+      const WHERE = {
+        "Page text": "the page text",
+        "Page title": "the page title",
+        "Your title": "your title",
+        "Your note": "your note",
+        Link: "the link",
+        Tag: "a tag",
+      };
+      const quote = (s) => `“${s}”`;
+      const shortUrl = (u) => u.replace(/^https?:\/\/(www\.)?/, "");
+      const listJoin = (a) =>
+        a.length < 2
+          ? a.join("")
+          : a.slice(0, -1).join(", ") + " and " + a[a.length - 1];
+
+      const resultTitle = (b) => {
+        if (b.userTitle) return [b.userTitle, "Your title"];
+        if (b.siteTitle) return [b.siteTitle, "Page title"];
+        return [b.host, "No title"];
+      };
+
+      const tagLineHTML = (tags) =>
+        tags.length
+          ? `<p class="cc-tagline">Only links tagged ${tags.map((t) => `<span class="term">${escapeHtml(t)}</span>`).join(" + ")}</p>`
+          : "";
+
+      function cardHTML({ bookmark: b, matches }, terms, tags, i) {
+        const [title, titleSrc] = resultTitle(b);
+        const clue = terms.join(" ");
+        const why = matches.map(
+          (m) =>
+            `<li><span class="term">${escapeHtml(m.term)}</span> was in ${escapeHtml(listJoin(m.hits.map((h) => WHERE[h.label] || h.label)))}</li>`,
+        );
+        tags.forEach((t) =>
+          why.push(
+            `<li><span class="term">${escapeHtml(t)}</span> is one of its tags</li>`,
+          ),
+        );
+        const firstField = matches
+          .flatMap((m) => m.hits.map((h) => h.field))
+          .find((f) => TEXT_FIELDS.includes(f));
+        const snip = firstField ? snippet(b[firstField], terms) : "";
+        const fail =
+          b.status === "failed"
+            ? `<span class="cc-fail">Page couldn’t be read. Saved anyway.</span>`
+            : "";
+        const tagLine = b.tags.length
+          ? ` Tags: ${b.tags.map(escapeHtml).join(", ")}.`
+          : "";
+        return `<li class="pop" data-test="result">
+      <article class="cc" style="--bg: var(${COLORS[b.id] || "--c-sun"})" data-tilt aria-label="${escapeHtml(title)}">
+        <header class="cc-top label"><span>No.&nbsp;${String(i + 1).padStart(2, "0")}</span><span class="cc-series">Your card</span><span class="cc-badge">Sample</span></header>
+        <div class="cc-row cc-link"><span class="cc-k label"><b>1</b>&ensp;Link you saved</span><a class="cc-v" href="${escapeHtml(b.url)}" rel="noopener noreferrer" target="_blank" translate="no">${escapeHtml(shortUrl(b.url))}</a></div>
+        <div class="cc-row cc-clue"><span class="cc-k label"><b>2</b>&ensp;${terms.length > 1 ? "Words" : "Word"} you typed</span>${clue ? `<p class="cc-big">${escapeHtml(quote(clue))}</p>` : ""}${tagLineHTML(tags)}</div>
+        <div class="cc-pair">
+          <div class="cc-row cc-result"><span class="cc-k label"><b>3</b>&ensp;Found it</span><div class="cc-v"><strong>${escapeHtml(title)}</strong><span class="cc-meta">${escapeHtml(titleSrc)}. Saved ${escapeHtml(b.saved)}.${tagLine}</span>${fail}</div></div>
+          <div class="cc-row cc-why" data-test="why"><span class="cc-k label">Why it matched</span><div class="cc-v"><ul>${why.join("")}</ul>${snip ? `<p class="cc-snip">${snip}</p>` : ""}</div></div>
+        </div>
+      </article>
+    </li>`;
+      }
+
+      function missHTML(terms, tags, query) {
+        const sugg = SUGGESTED.find(
+          (s) => s.expect === "miss" && s.q === query.trim().toLowerCase(),
+        );
+        const clue = terms.join(" ");
+        const reason = sugg
+          ? "The page says “procrastinate”. Search matches the words that were saved, not what they mean."
+          : "No sample link has every word" +
+            (tags.length ? " and every tag you picked" : "") +
+            ". Search looks for the exact words saved from the link, the page, your title, your note and tags. It doesn’t match by meaning.";
+        const next = sugg
+          ? `Use the page’s own word.<br><a class="try-pill" href="?q=procrastinate#try" data-try="procrastinate">Try “procrastinate”</a>`
+          : `Try a word the page itself would use${tags.length ? ", or turn off a tag" : ""}.`;
+        return `<li class="pop" data-test="miss">
+      <article class="cc cc-miss" aria-label="No match">
+        <header class="cc-top label"><span>No.&nbsp;00</span><span class="cc-series">Your card</span><span class="cc-badge">Sample</span></header>
+        <div class="cc-row cc-clue"><span class="cc-k label"><b>2</b>&ensp;${terms.length > 1 ? "Words" : "Word"} you typed</span>${clue ? `<p class="cc-big">${escapeHtml(quote(clue))}</p>` : ""}${tagLineHTML(tags)}</div>
+        <div class="cc-pair">
+          <div class="cc-row cc-result"><span class="cc-k label"><b>3</b>&ensp;Result</span><div class="cc-v"><span class="stamp">No match</span></div></div>
+          <div class="cc-row cc-why"><span class="cc-k label">Why it missed</span><div class="cc-v"><p class="cc-snip">${reason}</p></div></div>
+        </div>
+        <footer class="cc-tip"><span class="cc-k label">Next</span><p>${next}</p></footer>
+      </article>
+    </li>`;
+      }
+
+      const PLACEHOLDER = resultsEl.innerHTML;
+
+      function run({ push = true } = {}) {
+        const query = input.value;
+        const tags = [...selectedTags];
+        const { results, terms } = search(query, tags);
+        if (!terms.length && !tags.length) {
+          resultsEl.innerHTML = query.trim()
+            ? `<li class="placeholder-card"><span class="ph-big">Keep typing.</span><p>Words need at least two letters.</p></li>`
+            : PLACEHOLDER;
+          countEl.textContent = "8 sample links ready.";
+        } else if (!results.length) {
+          resultsEl.innerHTML = missHTML(terms, tags, query);
+          countEl.textContent = "0 links found.";
+        } else {
+          resultsEl.innerHTML = results
+            .map((r, i) => cardHTML(r, terms, tags, i))
+            .join("");
+          countEl.textContent = `${results.length} ${results.length === 1 ? "link" : "links"} found.`;
+        }
+        syncSuggestions();
+        if (push) writeURL();
+      }
+
+      function writeURL() {
+        const url = new URL(location.href);
+        const q = input.value.trim();
+        q ? url.searchParams.set("q", q) : url.searchParams.delete("q");
+        selectedTags.size
+          ? url.searchParams.set("tags", [...selectedTags].join(","))
+          : url.searchParams.delete("tags");
+        history.replaceState(null, "", url);
+      }
+
+      const suggWrap = $("#suggestions");
+      suggWrap.innerHTML = SUGGESTED.map(
+        (s) =>
+          `<button type="button" class="chip sugg" data-q="${escapeHtml(s.q)}" data-expect="${s.expect}" aria-pressed="false" title="${escapeHtml(s.why)}">${escapeHtml(s.q)}</button>`,
+      ).join("");
+      function syncSuggestions() {
+        const v = input.value.trim().toLowerCase();
+        suggWrap
+          .querySelectorAll(".chip")
+          .forEach((c) =>
+            c.setAttribute("aria-pressed", String(c.dataset.q === v)),
+          );
+      }
+      suggWrap.addEventListener("click", (e) => {
+        const b = e.target.closest(".chip");
+        if (!b) return;
+        input.value = b.dataset.q;
+        run();
+      });
+
+      const tagWrap = $("#tags");
+      tagWrap.innerHTML = ALL_TAGS.map(
+        (t) =>
+          `<button type="button" class="chip" data-test="tag-chip" data-tag="${escapeHtml(t)}" aria-pressed="false">${escapeHtml(t)}</button>`,
+      ).join("");
+      tagWrap.addEventListener("click", (e) => {
+        const b = e.target.closest('[data-test="tag-chip"]');
+        if (!b) return;
+        const t = b.dataset.tag;
+        selectedTags.has(t) ? selectedTags.delete(t) : selectedTags.add(t);
+        b.setAttribute("aria-pressed", String(selectedTags.has(t)));
+        run();
+      });
+
+      input.addEventListener("input", () => run());
+      $("#search-form").addEventListener("submit", (e) => {
+        e.preventDefault();
+        run();
+        input.blur();
+      });
+
+      document.addEventListener("click", (e) => {
+        const a = e.target.closest("[data-try]");
+        if (!a) return;
+        e.preventDefault();
+        input.value = a.dataset.try;
+        run();
+        goToSearch();
+      });
+
+      function goToSearch() {
+        $("#try").scrollIntoView({
+          behavior: motionOK() ? "smooth" : "auto",
+          block: "start",
+        });
+        input.focus({ preventScroll: true });
+      }
+      $('[data-test="cta-primary"]').addEventListener("click", (e) => {
+        e.preventDefault();
+        goToSearch();
+        history.replaceState(
+          null,
+          "",
+          location.pathname + location.search + "#try",
+        );
+      });
+      $('[data-test="cta-secondary"]').addEventListener("click", (e) => {
+        e.preventDefault();
+        $("#early-access").scrollIntoView({
+          behavior: motionOK() ? "smooth" : "auto",
+          block: "start",
+        });
+        $("#ea-email").focus({ preventScroll: true });
+      });
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey) return;
+        const t = e.target;
+        if (
+          t.closest &&
+          t.closest("input, textarea, select, [contenteditable]")
+        )
+          return;
+        e.preventDefault();
+        goToSearch();
+      });
+
+      const params = new URLSearchParams(location.search);
+      const q0 = params.get("q");
+      const tags0 = (params.get("tags") || "")
+        .split(",")
+        .filter((t) => ALL_TAGS.includes(t));
+      tags0.forEach((t) => {
+        selectedTags.add(t);
+        tagWrap
+          .querySelector(`[data-tag="${CSS.escape(t)}"]`)
+          ?.setAttribute("aria-pressed", "true");
+      });
+      if (q0) input.value = q0;
+      if (q0 || tags0.length) run({ push: false });
+
+      const form = $("#ea-form");
+      const email = $("#ea-email");
+      const err = $("#ea-error");
+      const ok = $("#ea-success");
+      const hard = $("#ea-hard");
+      const counter = $("#ea-count");
+      hard.addEventListener("input", () => {
+        counter.textContent = `${hard.value.length}/600`;
+      });
+      email.addEventListener("input", () => {
+        if (!err.hidden) {
+          err.hidden = true;
+          email.removeAttribute("aria-invalid");
+        }
+      });
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const v = email.value.trim();
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)) {
+          err.textContent = v
+            ? "That email doesn’t look right. Try name@example.com."
+            : "Enter your email to request early access.";
+          err.hidden = false;
+          ok.hidden = true;
+          email.setAttribute("aria-invalid", "true");
+          email.focus();
+          return;
+        }
+        err.hidden = true;
+        email.removeAttribute("aria-invalid");
+        const tester = $("#ea-test").checked;
+        ok.textContent = `Noted for ${v}${tester ? ", as a possible tester" : ""}. This preview sent and stored nothing.`;
+        ok.hidden = false;
+        form.reset();
+        counter.textContent = "0/600";
+      });
+    </script>
+  </body>
+</html>

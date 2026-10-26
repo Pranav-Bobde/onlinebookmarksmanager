@@ -4,7 +4,10 @@ import * as HttpServerResponse from "effect/http/HttpServerResponse";
 
 export default Cloudflare.Worker(
   "Web",
-  { main: import.meta.url },
+  {
+    main: import.meta.url,
+    assets: { directory: "./apps/web/public" },
+  },
   Effect.succeed({
     fetch: Effect.succeed(HttpServerResponse.text("Hello from OBM")),
   }),
